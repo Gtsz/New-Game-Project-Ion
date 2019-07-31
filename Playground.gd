@@ -11,17 +11,13 @@ var screen_diagonal : float
 
 var time_scale : float = 1
 
-
-# Called when the node enters the scene tree for the first time.
 func _ready():
     screen_size = get_viewport_rect().size
     screen_diagonal = screen_size.length()
     $TimerFillerSpawn.start()
     randomize()
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-    
     pass
 
 
@@ -30,10 +26,9 @@ func _on_TimerFillerSpawn_timeout():
     add_child(filler)
     $Ion.electrons_free.append(filler)
     filler.fillers_ref = $Ion.electrons_free
-    #filler.target_ref = $Ion
     filler.reset_pos()
     print("spawn ", filler)
-    if get_child_count() > 25:
+    if get_child_count() > 50:
         $TimerFillerSpawn.stop()
     
 func game_begin():

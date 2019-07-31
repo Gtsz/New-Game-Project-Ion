@@ -4,11 +4,9 @@ export var radius_core : float = 12
 export var radius_max : float = 24
 export var mass_init : float = 10
 export var damper : float = 120
-export var charge_init : float = -10000
+export var charge_init : float = -18000
 export var charge_limit : float = -4000
 export var tension_var : float = 1200
-
-export var tail_line_length : int = 10
 
 var radius = radius_core
 var charge = charge_init
@@ -37,12 +35,10 @@ func _input(event):
     if event is InputEventMouseMotion:
         target = event.position
 
-# Called when the node enters the scene tree for the first time.
 func _ready():
     screen_size = get_viewport_rect().size
-    $Line2D.width = radius * 2
+    $Trail.width = radius * 2
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
     if Input.is_action_pressed("pointer_pressed"):
         force = (target - position) * tension_var
@@ -54,6 +50,7 @@ func _process(delta):
         force += dist.normalized() * charge * e.charge / dist.length_squared()
          
     force -= velocity * damper
+    
     velocity += (force / mass) * delta
     #velocity *= exp(-1 * damper * delta)
     position += (prev_velocity + velocity) * delta * 0.5
@@ -62,10 +59,9 @@ func _process(delta):
     
     prev_velocity = velocity
     
-    $Line2D.add_point(position)   
-    $Line2D.position = -position
-    if $Line2D.get_point_count() > tail_line_length:
-        $Line2D.remove_point(0)
+    $Trail.add_timept(position, delta)
+    $Trail.position = -position
+    
 
 
 

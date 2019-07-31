@@ -1,6 +1,7 @@
 extends Node2D
 
 export var radius : float = 6
+
 export var mass : float = 1
 export var damper : float = 1
 export var charge : float = 2000
@@ -10,32 +11,35 @@ export var velocity_init_rand_var : float = 300
 export var position_init_dist_ratio : float = 1.1
 export var position_max_dist_ratio : float = 2
 
-export var tail_line_length : int = 30
-
 var screen_size
 var screen_diagonal
 
-var target_ref : Node2D
+var tar : Node2D
 var fillers_ref := Array()
-var force := Vector2()
-var velocity := Vector2()
+#var force := Vector2()
+#var v2 := Vector2()
 
 
 var will_reset := false
 
-var prev_position
-var prev_velocity
-var prev_delta = 0.0
-var ptn
+var position_prev : Vector2
+
+onready var phy = $PointPhysics
+
+#var v1
+#var prev_delta = 0.0
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
     screen_size = get_viewport_rect().size
     screen_diagonal = screen_size.length()
-    target_ref = get_parent().get_node("Ion")
-    prev_position = position
-    prev_velocity = velocity
-    $Line2D.width = radius * 2
+    tar = get_parent().get_node("Ion")
+    position_prev = position
+    #v1 = v2
+    $Trail.width = radius * 2
+    phy.charge = charge
+    phy.damper = damper
+    phy.mass = mass
     randomize()
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -45,67 +49,72 @@ func _process(delta):
         will_reset = false
         return
     
-    var dist = position - target_ref.position
+    
+    $PointPhysics.update(delta)
+#    force = calc_force()
+#    # predict
+#    v2 += (force / mass) * delta
+#    var ptn = calc_path_point_count(v1, v2)
+#    var dt = delta / ptn
+#    v2 = v1
+#    for i in range(ptn):
+#        v2 += (force / mass) * dt
+#        position += (v2 + v1) * dt * 0.5
+#        $Trail.add_timept(position, dt)
+#        force = calc_force()
+#        v1 = v2
+    
+    
+    #if dist.length() < radius + tar.radius:
+    if line_cirle_collision(tar.position, 
+            radius + tar.radius, position, position_prev):
+        print("hit...", self)
+        #reset_pos()
+#        will_reset = true
+#        tar.being_hit(charge, mass)
+    else:
+        will_reset = false
+        
+    position_prev = position
+    
+func calc_force() -> Vector2:
+    var dist = position - tar.position
+    
     if dist.length() > screen_diagonal * position_max_dist_ratio:
         reset_pos()
         
-    force = dist.normalized() * charge * target_ref.charge / dist.length_squared()
+    var force = dist.normalized() * phy.charge * tar.charge / dist.length_squared()
     
     for f in fillers_ref:
         if f != self:
             var dist_f = position - f.position
-            force += dist_f.normalized() * charge * charge / dist_f.length_squared()
+            force += dist_f.normalized() * phy.charge * phy.charge / dist_f.length_squared()
         
-    force -= velocity * damper
-    velocity += (force / mass) * delta
-    position += (velocity + prev_velocity) * delta * 0.5
+    force -= phy.v2 * phy.damper
     
-    ptn = calc_path_point_count(prev_velocity, velocity)
-    #if ptn > 0: print("ptn: ", ptn)
-    var arr = get_frame_tail(prev_delta, ptn)
-    #$Line2D.points.append_array(arr)
-    for pt in arr:
-        $Line2D.add_point(pt)
-    $Line2D.position = -position
-    #print(arr, $Line2D.points)
-    while $Line2D.get_point_count() > tail_line_length:
-        $Line2D.remove_point(0)
-    
-    #if dist.length() < radius + target_ref.radius:
-    if line_cirle_collision(target_ref.position, 
-            radius + target_ref.radius, position, prev_position):
-        print("hit...", self)
-        #reset_pos()
-        will_reset = true
-        target_ref.being_hit(charge, mass)
-    else:
-        will_reset = false
-        
-    prev_position = position
-    prev_velocity = velocity
-    prev_delta = delta
+    return force
     
 func reset_pos():
-    position = target_ref.position + polar2cartesian(
+    position = tar.position + polar2cartesian(
             screen_diagonal * position_init_dist_ratio, rand_range(0, 2 * PI))
-    prev_position = position
-    velocity = (target_ref.position - position).normalized() * velocity_init
-    velocity.x += rand_range(-velocity_init_rand_var, velocity_init_rand_var)
-    velocity.y += rand_range(-velocity_init_rand_var, velocity_init_rand_var)
+    position_prev = position
+    phy.v2 = (tar.position - position).normalized() * velocity_init
+    phy.v2.x += rand_range(-velocity_init_rand_var, velocity_init_rand_var)
+    phy.v2.y += rand_range(-velocity_init_rand_var, velocity_init_rand_var)
     print("reset ", self)
     
-    $Line2D.clear_points()
+    $Trail.erase_all()
     
-func get_frame_tail(delta, ptn) -> PoolVector2Array:
-    var arr = PoolVector2Array()
-    if ptn <= 0:
-        return arr
-    var dt = delta / ptn
-    var a = force / mass
-    for i in range(ptn):
-        var pos = prev_position + prev_velocity * (dt * i) + 0.5 * a * pow((dt * i), 2)
-        arr.append(pos)
-    return arr
+#func get_frame_tail(delta, ptn) -> PoolVector2Array:
+#    var arr = PoolVector2Array()
+#    if ptn <= 0:
+#        return arr
+#    var dt = delta / ptn
+#    var a = force / mass
+#    for i in range(ptn):
+#        var pos = position_prev + v1 * (dt * i) + 0.5 * a * pow((dt * i), 2)
+#        arr.append(pos)
+#    return arr
     
 static func line_cirle_collision(center:Vector2, r:float, p1:Vector2, p2:Vector2) -> bool:
     if (p2-p1).length() < 100:
@@ -121,7 +130,7 @@ static func line_cirle_collision(center:Vector2, r:float, p1:Vector2, p2:Vector2
     #print(A, " ", B, " ", C, " ", center, " ", r, " ", p1, " ", p2, " ", d)
     return d <= r
         
-static func calc_path_point_count(v1, v2) -> int:
+static func calc_path_point_count(v1, v2) -> int: # in [1,inf)
     var k = 0.002
     var th1 = cartesian2polar(v1.x, v1.y)
     var th2 = cartesian2polar(v2.x, v2.y)
