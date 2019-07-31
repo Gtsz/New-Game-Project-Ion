@@ -1,9 +1,10 @@
-[gd_scene load_steps=17 format=2]
+[gd_scene load_steps=18 format=2]
 
 [ext_resource path="res://Ion.gd" type="Script" id=1]
-[ext_resource path="res://icon.png" type="Texture" id=2]
+[ext_resource path="res://ball.png" type="Texture" id=2]
 [ext_resource path="res://Trail.gd" type="Script" id=3]
 [ext_resource path="res://IonVisual.gd" type="Script" id=4]
+[ext_resource path="res://icon.png" type="Texture" id=5]
 
 [sub_resource type="Gradient" id=1]
 colors = PoolColorArray( 1, 0.4, 0.4, 0.00392157, 1, 0.4, 0.4, 1 )
@@ -29,7 +30,7 @@ output_port_for_preview = 0
 function = 0
 
 [sub_resource type="VisualShaderNodeTexture" id=8]
-texture = ExtResource( 2 )
+texture = ExtResource( 5 )
 
 [sub_resource type="VisualShaderNodeInput" id=9]
 input_name = "uv"
@@ -143,4 +144,4 @@ script = ExtResource( 4 )
 visible = false
 material = SubResource( 12 )
 scale = Vector2( 0.5, 0.5 )
-texture = ExtResource( 2 )
+texture = ExtResource( 5 )

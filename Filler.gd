@@ -70,8 +70,8 @@ func _process(delta):
             radius + tar.radius, position, position_prev):
         print("hit...", self)
         #reset_pos()
-#        will_reset = true
-#        tar.being_hit(charge, mass)
+        will_reset = true
+        tar.being_hit(charge, mass)
     else:
         will_reset = false
         
@@ -88,7 +88,7 @@ func calc_force() -> Vector2:
     for f in fillers_ref:
         if f != self:
             var dist_f = position - f.position
-            force += dist_f.normalized() * phy.charge * phy.charge / dist_f.length_squared()
+            force += -dist_f.normalized() * phy.charge * phy.charge / dist_f.length_squared()
         
     force -= phy.v2 * phy.damper
     
